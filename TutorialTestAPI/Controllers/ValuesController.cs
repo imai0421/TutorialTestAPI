@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Web.Http.Description;
 
 namespace TutorialTestAPI.Controllers
 {
@@ -28,7 +29,17 @@ namespace TutorialTestAPI.Controllers
         // GET api/values
         public IEnumerable<Hero> Get()
         {
-            return heroes;
+            string[] value = GetQueryString("name");
+
+            string name = value == null ?
+                string.Empty : string.Join(",", value);
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                return heroes;
+            }
+
+            return heroes.Where(x => x.name.Contains(name));
         }
 
         // GET api/values/5
@@ -37,19 +48,36 @@ namespace TutorialTestAPI.Controllers
             return heroes.Where(x => x.id==id).First();
         }
 
-        //// POST api/values
-        //public void Post([FromBody] string value)
-        //{
-        //}
+        // POST api/values
+        public Hero Post([FromBody] Hero value)
+        {
+            return value;
+        }
 
-        //// PUT api/values/5
-        //public void Put(int id, [FromBody] string value)
-        //{
-        //}
+        // PUT api/values/5
+        public void Put(int id, [FromBody] Hero value)
+        {
+     
+        }
 
-        //// DELETE api/values/5
-        //public void Delete(int id)
-        //{
-        //}
+        // DELETE api/values/5
+        public void Delete(int id)
+        {
+        }
+
+
+        /// <summary>
+        /// 指定したキーのクエリ文字列の値を取得します
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        private string[] GetQueryString(string key)
+        {
+            return Request.GetQueryNameValuePairs()
+                .Where(e => e.Key == key)
+                .Select(e => e.Value)
+                .ToArray();
+        }
+
     }
 }

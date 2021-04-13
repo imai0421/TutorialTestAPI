@@ -10,7 +10,7 @@ namespace TutorialTestAPI
         public static void Register(HttpConfiguration config)
         {
             // Web API の設定およびサービス
-
+            config.EnableCors();
             // Web API ルート
             config.MapHttpAttributeRoutes();
 
