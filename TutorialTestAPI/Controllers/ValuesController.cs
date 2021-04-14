@@ -6,65 +6,132 @@ using System.Net;
 using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
+using TutorialTestAPI.DAL;
 
 namespace TutorialTestAPI.Controllers
 {
+    /// <summary>
+    /// Hero操作API
+    /// </summary>
     public class ValuesController : ApiController
     {
-        private Hero[] heroes = new Hero[]
-            {
-                new Hero { id = 11, name = "Dr Nice@server" },
-                new Hero { id = 12, name = "Narco@server" },
-                new Hero { id = 13, name = "Bombasto@server" },
-                new Hero { id= 14, name = "Celeritas@server" },
-                new Hero { id= 15, name = "Magneta@server" },
-                new Hero { id= 16, name = "RubberMan@server" },
-                new Hero { id= 17, name = "Dynama@server" },
-                new Hero { id= 18, name = "Dr IQ@server" },
-                new Hero { id= 19, name = "Magma@server" },
-                new Hero { id= 20, name = "Tornado@server" }
-            };
+        /// <summary>
+        /// ヒーローＩＤの初期値
+        /// </summary>
+        private int initialHeroId = 11;
 
-
-        // GET api/values
+        /// <summary>
+        /// ヒーローを検索します
+        /// </summary>
+        /// <returns>ヒーロー一覧</returns>
+        /// <remarks>GET api/values</remarks>
         public IEnumerable<Hero> Get()
         {
+            // クエリパラメータから"name"を取得
             string[] value = GetQueryString("name");
-
             string name = value == null ?
                 string.Empty : string.Join(",", value);
 
-            if (string.IsNullOrWhiteSpace(name))
+            // クエリパラメータに"name"が指定されている場合はヒーロー名に"name"を含むヒーローを検索
+            // 上記以外の場合は全件検索
+            using (var context = new OracleContext())
             {
-                return heroes;
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    var query = context.Heroes
+                        .Select(x => x)
+                        .OrderBy(x => x.Id);
+                    return query.ToArray();
+                }
+                else
+                {
+                    var query = context.Heroes
+                        .Where(x => (String.Compare(x.Name, name, true) == 0))
+                        .Select(x => x)
+                        .OrderBy(x => x.Id);
+                    return query.ToArray();
+                }
             }
-
-            return heroes.Where(x => x.name.Contains(name));
         }
 
-        // GET api/values/5
+        /// <summary>
+        /// 取得します
+        /// </summary>
+        /// <param name="id">ヒーローＩＤ</param>
+        /// <returns>ヒーロー</returns>
+        /// <remarks>GET api/values/5</remarks>
         public Hero Get(int id)
         {
-            return heroes.Where(x => x.id==id).First();
+            // 指定したヒーローＩＤのヒーローを取得し返却
+            using (var context = new OracleContext())
+            {
+                return context.Heroes.Where(x => x.Id == id).First();
+            }
         }
 
-        // POST api/values
+        /// <summary>
+        /// 登録します
+        /// </summary>
+        /// <param name="value">ヒーロー</param>
+        /// <returns>登録後ヒーロー</returns>
+        /// <remarks>POST api/values</remarks>
         public Hero Post([FromBody] Hero value)
         {
-            return value;
+            // ヒーローを登録して登録後のヒーローを返却
+            using (var context = new OracleContext())
+            {
+                // 最大のヒーローＩＤを取得
+                int? maxId = context.Heroes.Max(x => (int?)x.Id);
+                var newHero = new Hero
+                {
+                    // ヒーローＩＤをインクリメント
+                    Id = maxId == null ? initialHeroId : maxId.Value + 1,
+                    Name = value.Name
+                };
+                context.Heroes.Add(newHero);
+                context.SaveChanges();
+                return newHero;
+            }
         }
 
-        // PUT api/values/5
+        /// <summary>
+        /// 更新します
+        /// </summary>
+        /// <param name="id">ヒーローＩＤ</param>
+        /// <param name="value">ヒーロー</param>
+        /// <remarks>PUT api/values/5</remarks>
         public void Put(int id, [FromBody] Hero value)
         {
-     
+            // ヒーローを更新
+            // 氏名が変更されていなかった場合は更新しない
+            using (var context = new OracleContext())
+            {
+                var hero = context.Heroes.Where(x => x.Id == id).First();
+                if (hero.Name.Equals(value.Name))
+                {
+                    return;
+                }
+
+                hero.Name = value.Name;
+                context.SaveChanges();
+            }
         }
 
-        // DELETE api/values/5
+        /// <summary>
+        /// 削除します
+        /// </summary>
+        /// <param name="id">ヒーローＩＤ</param>
+        /// <remarks>DELETE api/values/5</remarks>
         public void Delete(int id)
         {
+            // ヒーローを削除
+            using (var context = new OracleContext())
+            {
+                var hero = context.Heroes.Where(x => x.Id == id).First();
+                context.Heroes.Remove(hero);
+                context.SaveChanges();
+            }
         }
-
 
         /// <summary>
         /// 指定したキーのクエリ文字列の値を取得します
