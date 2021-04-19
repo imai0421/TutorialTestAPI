@@ -46,7 +46,7 @@ namespace TutorialTestAPI.Controllers
                 else
                 {
                     var query = context.Heroes
-                        .Where(x => (String.Compare(x.Name, name, true) == 0))
+                        .Where(x => x.Name.Contains(name))
                         .Select(x => x)
                         .OrderBy(x => x.Id);
                     return query.ToArray();
