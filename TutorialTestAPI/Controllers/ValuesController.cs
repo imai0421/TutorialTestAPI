@@ -7,6 +7,8 @@ using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
 using TutorialTestAPI.DAL;
+using Microsoft.AspNet.SignalR;
+using TutorialTestAPI.Hubs;
 
 namespace TutorialTestAPI.Controllers
 {
@@ -90,6 +92,10 @@ namespace TutorialTestAPI.Controllers
                 };
                 context.Heroes.Add(newHero);
                 context.SaveChanges();
+
+                var hubContext = GlobalHost.ConnectionManager.GetHubContext<SampleHub>();
+                hubContext.Clients.All.Notification(
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " Added id:" + newHero.Id + ", name:" + newHero.Name);
                 return newHero;
             }
         }
@@ -114,6 +120,10 @@ namespace TutorialTestAPI.Controllers
 
                 hero.Name = value.Name;
                 context.SaveChanges();
+
+                var hubContext = GlobalHost.ConnectionManager.GetHubContext<SampleHub>();
+                hubContext.Clients.All.Notification(
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " Modified id:" + hero.Id + ", name:" + hero.Name);
             }
         }
 
@@ -130,6 +140,10 @@ namespace TutorialTestAPI.Controllers
                 var hero = context.Heroes.Where(x => x.Id == id).First();
                 context.Heroes.Remove(hero);
                 context.SaveChanges();
+
+                var hubContext = GlobalHost.ConnectionManager.GetHubContext<SampleHub>();
+                hubContext.Clients.All.Notification(
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " Deleted id:" + hero.Id + ", name:" + hero.Name);
             }
         }
 
